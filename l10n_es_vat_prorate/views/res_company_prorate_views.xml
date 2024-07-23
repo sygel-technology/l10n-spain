@@ -10,9 +10,10 @@
                 <header />
                 <sheet>
                     <group>
-                        <field name="company_id" />
                         <field name="date" />
                         <field name="vat_prorate" />
+                        <field name="prorate_type" />
+                        <field name="special_vat_prorate_default" invisible="prorate_type == 'general'" />
                     </group>
                 </sheet>
             </form>
@@ -22,8 +23,9 @@
         <field name="name">res.company.vat.prorate.tree (in l10n_es_vat_prorate)</field>
         <field name="model">res.company.vat.prorate</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <tree>
                 <field name="date" />
+                <field name="prorate_type" />
                 <field name="vat_prorate" />
             </tree>
         </field>

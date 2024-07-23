@@ -60,6 +60,15 @@ class TestVatProrate(AccountTestInvoicingCommon):
         with self.assertRaises(IntegrityError):
             vat_prorate_line.vat_prorate = 200
 
+    def test_company_special_vat_prorate_out_of_range(self):
+        # A error should be displayed if special prorates are 100%
+        prorate_id = self.env.company.vat_prorate_ids[0]
+        with self.assertRaises(exceptions.ValidationError):
+            prorate_id.write({
+                "prorate_type": "special",
+                "vat_prorate": 100
+            })
+
     def test_no_company_vat_prorate_information(self):
         self.assertTrue(self.env.company.vat_prorate_ids)
         with self.assertRaises(exceptions.ValidationError):
@@ -196,12 +205,10 @@ class TestVatProrate(AccountTestInvoicingCommon):
         self.assertNotEqual(tax_lines[0].account_id, tax_lines[1].account_id)
 
     def test_special_prorate_default_true(self):
-        self.env.company.write(
-            {
-                "with_special_vat_prorate": True,
-                "with_special_vat_prorate_default": True,
-            }
-        )
+        self.env.company.vat_prorate_ids[0].write({
+            "prorate_type": "special",
+            "special_vat_prorate_default": True,
+        })
         invoice = self.init_invoice(
             "in_invoice", products=[self.product_a, self.product_b]
         )
@@ -209,12 +216,10 @@ class TestVatProrate(AccountTestInvoicingCommon):
         self.assertEqual(2, len(invoice.line_ids.filtered("vat_prorate")))
 
     def test_special_prorate_default_false(self):
-        self.env.company.write(
-            {
-                "with_special_vat_prorate": True,
-                "with_special_vat_prorate_default": False,
-            }
-        )
+        self.env.company.vat_prorate_ids[0].write({
+            "prorate_type": "special",
+            "special_vat_prorate_default": False,
+        })
         invoice = self.init_invoice(
             "in_invoice", products=[self.product_a, self.product_b]
         )
@@ -222,12 +227,10 @@ class TestVatProrate(AccountTestInvoicingCommon):
         self.assertEqual(0, len(invoice.line_ids.filtered("vat_prorate")))
 
     def test_special_prorate_mixed(self):
-        self.env.company.write(
-            {
-                "with_special_vat_prorate": True,
-                "with_special_vat_prorate_default": True,
-            }
-        )
+        self.env.company.vat_prorate_ids[0].write({
+            "prorate_type": "special",
+            "special_vat_prorate_default": True,
+        })
         invoice = self.init_invoice(
             "in_invoice", products=[self.product_a, self.product_b]
         )

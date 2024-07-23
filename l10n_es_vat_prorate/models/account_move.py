@@ -67,7 +67,7 @@ class AccountMoveLine(models.Model):
                     )
                 ):
                     prec = line.move_id.currency_id.rounding
-                    prorate = line.company_id.get_prorate(vat_prorate_date)
+                    prorate = line.company_id.get_prorate(vat_prorate_date).vat_prorate
                     new_vals = tax_vals.copy()
                     for field in {"amount_currency", "balance"}:
                         tax_vals[field] = float_round(
