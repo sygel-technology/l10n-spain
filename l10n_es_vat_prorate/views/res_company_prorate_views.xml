@@ -12,8 +12,11 @@
                     <group>
                         <field name="date" />
                         <field name="vat_prorate" />
-                        <field name="prorate_type" />
-                        <field name="special_vat_prorate_default" invisible="prorate_type == 'general'" />
+                        <field name="type" />
+                        <field
+                            name="special_vat_prorate_default"
+                            invisible="type == 'general'"
+                        />
                     </group>
                 </sheet>
             </form>
@@ -25,7 +28,7 @@
         <field name="arch" type="xml">
             <tree>
                 <field name="date" />
-                <field name="prorate_type" />
+                <field name="type" />
                 <field name="vat_prorate" />
             </tree>
         </field>

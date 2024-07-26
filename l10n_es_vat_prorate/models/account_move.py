@@ -9,9 +9,21 @@ from odoo.tools import float_round, frozendict
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    with_special_vat_prorate = fields.Boolean(
-        related="company_id.with_special_vat_prorate"
+    prorate_id = fields.Many2one(
+        string="Prorate",
+        comodel_name="res.company.vat.prorate",
+        compute="_compute_prorate_id",
+        ondelete="restrict",
+        store=True,
     )
+    with_special_vat_prorate = fields.Boolean(compute="_compute_prorate_id", store=True)
+
+    @api.depends("company_id", "date", "invoice_date")
+    def __compute_prorate_id(self):
+        for rec in self:
+            prorate_date = rec.date or rec.invoice_date or fields.Date.today()
+            rec.prorate_id = rec.company_id.get_prorate(prorate_date)
+            rec.with_special_vat_prorate = rec.prorate_id.special_vat_prorate_default
 
 
 class AccountMoveLine(models.Model):
@@ -27,8 +39,8 @@ class AccountMoveLine(models.Model):
         default=lambda self: (
             self.env.company.with_vat_prorate
             and (
-                not self.env.company.with_special_vat_prorate
-                or self.env.company.with_special_vat_prorate_default
+                not self.prorate_id.type == "special"
+                or self.prorate_id.special_vat_prorate_default
             )
         ),
     )
@@ -49,7 +61,6 @@ class AccountMoveLine(models.Model):
         for line in self:
             res = super(AccountMoveLine, line)._compute_all_tax()
             prorate_tax_list = {}
-            vat_prorate_date = line.date or line.invoice_date or fields.Date.today()
             for tax_key, tax_vals in line.compute_all_tax.items():
                 tax_vals["vat_prorate"] = False
                 tax = (
@@ -67,7 +78,7 @@ class AccountMoveLine(models.Model):
                     )
                 ):
                     prec = line.move_id.currency_id.rounding
-                    prorate = line.company_id.get_prorate(vat_prorate_date).vat_prorate
+                    prorate = line.move_id.prorate_id.vat_prorate
                     new_vals = tax_vals.copy()
                     for field in {"amount_currency", "balance"}:
                         tax_vals[field] = float_round(
