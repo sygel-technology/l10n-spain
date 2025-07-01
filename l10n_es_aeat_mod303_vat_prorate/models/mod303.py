@@ -125,7 +125,7 @@ class L10nEsAeatMod303Report(models.Model):
             report.prorate_account_id = self.env["account.account"].search(
                 [
                     ("code", "like", account_number),
-                    ("company_id", "=", report.company_id.id),
+                    ("company_ids", "=", report.company_id.id),
                 ],
                 limit=1,
             )
