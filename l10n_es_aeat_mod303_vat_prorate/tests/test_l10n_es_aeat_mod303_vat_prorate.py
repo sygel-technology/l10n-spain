@@ -3,7 +3,7 @@
 # License AGPL-3 - See https://www.gnu.org/licenses/agpl-3.0
 
 
-from odoo import exceptions
+from odoo import Command, exceptions
 
 from odoo.addons.l10n_es_aeat_mod303.tests.test_l10n_es_aeat_mod303 import (
     TestL10nEsAeatMod303Base,
@@ -25,7 +25,7 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self._invoice_purchase_create("2024-01-01")
         self.model303.button_calculate()
         self.assertEqual(self.model303.total_devengado, 210)
-        self.assertEqual(self.model303.total_deducir, 105.0)
+        self.assertEqual(self.model303.total_deducir, 105)
         self.assertEqual(self.model303.resultado_liquidacion, 105)
         self.assertEqual(self.model303.casilla_44, 0)
 
@@ -35,7 +35,7 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
             {
                 "with_vat_prorate": True,
                 "vat_prorate_ids": [
-                    (0, 0, {"date": "2024-01-01", "vat_prorate": 90}),
+                    Command.create({"date": "2024-01-01", "vat_prorate": 90}),
                 ],
             }
         )
@@ -44,8 +44,8 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self._invoice_purchase_create("2024-01-01")
         self.model303.button_calculate()
         self.assertEqual(self.model303.total_devengado, 210)
-        self.assertEqual(self.model303.total_deducir, 105.0)
-        self.assertEqual(self.model303.resultado_liquidacion, 105.0)
+        self.assertEqual(self.model303.total_deducir, 94.5)
+        self.assertEqual(self.model303.resultado_liquidacion, 115.5)
         self.assertEqual(self.model303.casilla_44, 0)
         # create invoices + model 303 for 4T
         self._invoice_sale_create("2024-11-01")
@@ -56,20 +56,20 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self.model303_4t.button_calculate()
         self.assertEqual(self.model303_4t.prorate_account_id.code[:4], "6341")
         self.assertEqual(self.model303_4t.total_devengado, 210)
-        self.assertEqual(self.model303_4t.total_deducir, 103.83)
-        self.assertEqual(self.model303_4t.resultado_liquidacion, 106.17)
-        self.assertEqual(self.model303_4t.casilla_44, -2.34)
+        self.assertEqual(self.model303_4t.total_deducir, 93.45)
+        self.assertEqual(self.model303_4t.resultado_liquidacion, 116.55)
+        self.assertEqual(self.model303_4t.casilla_44, -2.1)
         # Export to BOE and check the inclusion of field 44
         boe_wizard = self.env["l10n.es.aeat.report.export_to_boe"].create(
             {"name": "test_export_to_boe.txt"}
         )
         config = self.env.ref("l10n_es_aeat_mod303.aeat_mod303_2023_main_export_config")
         boe = boe_wizard._export_config(self.model303_4t, config)
-        self.assertIn("N0000000000000234", str(boe))
+        self.assertIn("N0000000000000210", str(boe))
         # Generate regularization move
         self.model303_4t.button_post()
         self.assertTrue(
-            self.model303_4t.move_id.line_ids.filtered(lambda x: x.debit == 2.34)
+            self.model303_4t.move_id.line_ids.filtered(lambda x: x.debit == 2.1)
         )
 
     def test_model_303_with_special_prorate_default(self):
@@ -78,9 +78,7 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
             {
                 "with_vat_prorate": True,
                 "vat_prorate_ids": [
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "date": "2024-01-01",
                             "vat_prorate": 90,
@@ -96,8 +94,8 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self._invoice_purchase_create("2024-01-01")
         self.model303.button_calculate()
         self.assertEqual(self.model303.total_devengado, 210)
-        self.assertEqual(self.model303.total_deducir, 105.0)
-        self.assertEqual(self.model303.resultado_liquidacion, 105.0)
+        self.assertEqual(self.model303.total_deducir, 94.5)
+        self.assertEqual(self.model303.resultado_liquidacion, 115.5)
         self.assertEqual(self.model303.casilla_44, 0)
         # create invoices + model 303 for 4T
         self._invoice_sale_create("2024-11-01")
@@ -106,9 +104,9 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self.model303_4t.button_calculate()
         self.assertEqual(self.model303_4t.prorate_account_id.code[:4], "6391")
         self.assertEqual(self.model303_4t.total_devengado, 210)
-        self.assertEqual(self.model303_4t.total_deducir, 105.0)
-        self.assertEqual(self.model303_4t.resultado_liquidacion, 105.0)
-        self.assertEqual(self.model303_4t.casilla_44, 0)
+        self.assertEqual(self.model303_4t.total_deducir, 115.5)
+        self.assertEqual(self.model303_4t.resultado_liquidacion, 94.5)
+        self.assertEqual(self.model303_4t.casilla_44, 21)
 
     def test_model_303_with_special_prorate_manual(self):
         # Set vat prorate configuration for company
@@ -116,9 +114,7 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
             {
                 "with_vat_prorate": True,
                 "vat_prorate_ids": [
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "date": "2024-01-01",
                             "vat_prorate": 90,
@@ -131,9 +127,7 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         )
         p_inv_extra_data = {
             "invoice_line_ids": [
-                (
-                    0,
-                    0,
+                Command.create(
                     {
                         "name": "Test for tax(es) without prorate",
                         "account_id": self.accounts["600000"].id,
@@ -146,16 +140,14 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
                         "with_vat_prorate": False,
                     },
                 ),
-                (
-                    0,
-                    0,
+                Command.create(
                     {
                         "name": "Test for tax(es) with prorate",
                         "account_id": self.accounts["600000"].id,
                         "price_unit": 200,
                         "quantity": 1,
                         "tax_ids": [
-                            (4, t.id)
+                            Command.link(t.id)
                             for t in self._get_taxes("P_IVA21_BC".split("//")[0])
                         ],
                         "with_vat_prorate": True,
@@ -168,8 +160,8 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
         self._invoice_purchase_create("2024-01-01", p_inv_extra_data)
         self.model303.button_calculate()
         self.assertEqual(self.model303.total_devengado, 210)
-        self.assertEqual(self.model303.total_deducir, 105.0)
-        self.assertEqual(self.model303.resultado_liquidacion, 105.0)
+        self.assertEqual(self.model303.total_deducir, 100.80)
+        self.assertEqual(self.model303.resultado_liquidacion, 109.2)
         self.assertEqual(self.model303.casilla_44, 0)
         # create invoices + model 303 for 4T
         self._invoice_sale_create("2024-11-01")
@@ -178,8 +170,8 @@ class TestL10nEsAeatMod303VatProrate(TestL10nEsAeatMod303Base):
             self.model303_4t.vat_prorate_percent = 101
         self.model303_4t.vat_prorate_percent = 85
         self.model303_4t.button_calculate()
-        self.assertEqual(self.model303_4t.prorate_account_id.code[:4], "6391")
+        self.assertEqual(self.model303_4t.prorate_account_id.code[:4], "6341")
         self.assertEqual(self.model303_4t.total_devengado, 210)
-        self.assertEqual(self.model303_4t.total_deducir, 105.0)
-        self.assertEqual(self.model303_4t.resultado_liquidacion, 105.0)
-        self.assertEqual(self.model303_4t.casilla_44, 0.0)
+        self.assertEqual(self.model303_4t.total_deducir, 96.6)
+        self.assertEqual(self.model303_4t.resultado_liquidacion, 113.40)
+        self.assertEqual(self.model303_4t.casilla_44, -4.2)
